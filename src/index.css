@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-cloud-white text-graphite font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 禪意：移除預設 button focus ring，改用自訂柔和 ring */
+  button:focus-visible {
+    @apply outline-none ring-2 ring-morandi-blue/40 ring-offset-2 ring-offset-cloud-white;
+  }
+}
+
+@layer utilities {
+  .scrollbar-zen::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-zen::-webkit-scrollbar-thumb {
+    @apply bg-divider rounded-full;
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+}
