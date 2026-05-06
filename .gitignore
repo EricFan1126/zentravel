@@ -7,3 +7,7 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 *.log
+.env
+.env.*
+.claude/
+.netlify/

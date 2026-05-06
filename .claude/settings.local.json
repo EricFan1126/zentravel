@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm --version)",
-      "Bash(rm -rf dist)",
-      "Bash(node_modules/.bin/vite build *)"
-    ]
-  }
-}
