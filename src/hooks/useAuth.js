@@ -27,11 +27,10 @@ function writeCachedUser(u) {
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
 
 export function useAuth() {
-  // 用快取初始化，避免 Safari 卡在「載入中」
   const [user, setUser] = useState(() => readCachedUser())
+  const [redirectError, setRedirectError] = useState(null)
 
   useEffect(() => {
-    // 處理 redirect 回來後的結果（Safari 專用流程）
     getRedirectResult(auth).then((result) => {
       if (result?.user) {
         writeCachedUser(result.user)
@@ -39,6 +38,7 @@ export function useAuth() {
       }
     }).catch((err) => {
       console.error('getRedirectResult error:', err)
+      setRedirectError(err?.code + ': ' + err?.message)
     })
 
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -57,5 +57,5 @@ export function useAuth() {
     return signOut(auth)
   }
 
-  return { user, login, logout }
+  return { user, login, logout, redirectError }
 }
