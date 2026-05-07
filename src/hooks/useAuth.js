@@ -32,7 +32,14 @@ export function useAuth() {
 
   useEffect(() => {
     // 處理 redirect 回來後的結果（Safari 專用流程）
-    getRedirectResult(auth).catch(() => {})
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        writeCachedUser(result.user)
+        setUser(result.user)
+      }
+    }).catch((err) => {
+      console.error('getRedirectResult error:', err)
+    })
 
     const unsub = onAuthStateChanged(auth, (u) => {
       writeCachedUser(u)
