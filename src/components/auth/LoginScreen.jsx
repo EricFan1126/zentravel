@@ -1,18 +1,7 @@
-import { useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 
 export function LoginScreen() {
-  const { login, redirectError } = useAuth()
-  const [errMsg, setErrMsg] = useState('')
-
-  const handleLogin = async () => {
-    setErrMsg('')
-    try {
-      await login()
-    } catch (err) {
-      setErrMsg(err?.code + ': ' + err?.message)
-    }
-  }
+  const { login } = useAuth()
 
   return (
     <div className="min-h-screen bg-cloud-white flex flex-col items-center justify-center px-5">
@@ -23,16 +12,12 @@ export function LoginScreen() {
       </div>
 
       <button
-        onClick={handleLogin}
+        onClick={login}
         className="flex items-center gap-3 px-6 py-3 rounded-2xl border border-divider bg-white hover:border-morandi-blue/40 hover:shadow-zen-lg transition-all duration-200 text-sm text-graphite font-medium"
       >
         <GoogleIcon />
         使用 Google 帳號登入
       </button>
-
-      {(errMsg || redirectError) && (
-        <p className="mt-4 text-xs text-red-500 text-center max-w-xs break-all">{errMsg || redirectError}</p>
-      )}
 
       <p className="mt-8 text-xs text-graphite-soft/60 text-center max-w-xs">
         登入後你的旅程將安全儲存在雲端，並可邀請同行的人一起查看。

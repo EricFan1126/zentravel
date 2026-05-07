@@ -32,7 +32,6 @@ const isPWA = window.matchMedia('(display-mode: standalone)').matches
 
 export function useAuth() {
   const [user, setUser] = useState(() => readCachedUser())
-  const [redirectError, setRedirectError] = useState(null)
 
   useEffect(() => {
     getRedirectResult(auth).then((result) => {
@@ -40,10 +39,7 @@ export function useAuth() {
         writeCachedUser(result.user)
         setUser(result.user)
       }
-    }).catch((err) => {
-      console.error('getRedirectResult error:', err)
-      setRedirectError(err?.code + ': ' + err?.message)
-    })
+    }).catch(() => {})
 
     const unsub = onAuthStateChanged(auth, (u) => {
       writeCachedUser(u)
@@ -63,5 +59,5 @@ export function useAuth() {
     return signOut(auth)
   }
 
-  return { user, login, logout, redirectError }
+  return { user, login, logout }
 }
