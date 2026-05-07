@@ -25,6 +25,10 @@ function writeCachedUser(u) {
 }
 
 const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+// PWA 模式（加到主畫面）：standalone 或 fullscreen display mode
+const isPWA = window.matchMedia('(display-mode: standalone)').matches
+  || window.matchMedia('(display-mode: fullscreen)').matches
+  || window.navigator.standalone === true
 
 export function useAuth() {
   const [user, setUser] = useState(() => readCachedUser())
@@ -49,7 +53,9 @@ export function useAuth() {
   }, [])
 
   const login = () => {
-    if (isSafari) return signInWithRedirect(auth, googleProvider)
+    // PWA 模式下 redirect 會丟失 session，一律用 popup
+    // 一般 Safari 瀏覽器也改用 popup（iOS 16.4+ 已支援）
+    if (isSafari && !isPWA) return signInWithRedirect(auth, googleProvider)
     return signInWithPopup(auth, googleProvider)
   }
   const logout = () => {
