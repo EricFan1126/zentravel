@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatTime, formatRelative } from '@/lib/time'
@@ -16,25 +16,58 @@ export function TimelineCard({ event, expanded, onToggle, onEdit, onDelete, now,
   const TypeIcon = type.icon
 
   const touchStart = useRef(null)
+  const touchStartY = useRef(null)
   const isDragging = useRef(false)
+  const isHorizontal = useRef(false)
+  const swipeOpenRef = useRef(swipeOpen)
+  const cardRef = useRef(null)
 
-  const handleTouchStart = (e) => {
-    touchStart.current = e.touches[0].clientX
-    isDragging.current = false
-  }
+  // 保持 ref 與 prop 同步（閉包問題）
+  useEffect(() => { swipeOpenRef.current = swipeOpen }, [swipeOpen])
 
-  const handleTouchMove = (e) => {
-    if (touchStart.current === null) return
-    if (Math.abs(e.touches[0].clientX - touchStart.current) > 8) isDragging.current = true
-  }
+  useEffect(() => {
+    const el = cardRef.current
+    if (!el) return
 
-  const handleTouchEnd = (e) => {
-    if (touchStart.current === null) return
-    const dx = e.changedTouches[0].clientX - touchStart.current
-    touchStart.current = null
-    if (dx < -THRESHOLD && !swipeOpen) { onSwipeOpen(event.id); return }
-    if (dx > THRESHOLD && swipeOpen) { onSwipeOpen(null); return }
-  }
+    const onStart = (e) => {
+      touchStart.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
+      isDragging.current = false
+      isHorizontal.current = false
+    }
+
+    const onMove = (e) => {
+      if (touchStart.current === null) return
+      const dx = e.touches[0].clientX - touchStart.current
+      const dy = e.touches[0].clientY - touchStartY.current
+      if (!isHorizontal.current && Math.abs(dx) > 5) {
+        if (Math.abs(dx) > Math.abs(dy)) isHorizontal.current = true
+      }
+      if (isHorizontal.current) {
+        e.preventDefault()
+        isDragging.current = true
+      }
+    }
+
+    const onEnd = (e) => {
+      if (touchStart.current === null) return
+      const dx = e.changedTouches[0].clientX - touchStart.current
+      touchStart.current = null
+      touchStartY.current = null
+      if (!isHorizontal.current) return
+      if (dx < -THRESHOLD && !swipeOpenRef.current) { onSwipeOpen(event.id); return }
+      if (dx > THRESHOLD && swipeOpenRef.current) { onSwipeOpen(null); return }
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd, { passive: true })
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+    }
+  }, [event.id, onSwipeOpen])
 
   const handleCardClick = () => {
     if (isDragging.current) return
@@ -55,7 +88,7 @@ export function TimelineCard({ event, expanded, onToggle, onEdit, onDelete, now,
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl">
+    <div ref={cardRef} className="relative overflow-hidden rounded-2xl">
       {/* 底層：編輯 / 刪除按鈕（右側） */}
       <div
         className="absolute inset-y-0 right-0 flex"
@@ -90,9 +123,6 @@ export function TimelineCard({ event, expanded, onToggle, onEdit, onDelete, now,
           transform: swipeOpen ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)',
           transition: 'transform 0.25s ease-out',
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         <Card
           onClick={handleCardClick}
