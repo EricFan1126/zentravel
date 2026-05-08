@@ -31,6 +31,8 @@ export function Timeline({
   const [expandedId, setExpandedId] = useState(focusEvent?.id ?? null)
   const toggle = (id) => setExpandedId(prev => (prev === id ? null : id))
 
+  const [swipeOpenId, setSwipeOpenId] = useState(null)
+
   // 今天分區
   const todayFocus = isToday && focusEvent && toDateKey(focusEvent.startTime) === todayKey
     ? focusEvent
@@ -95,6 +97,8 @@ export function Timeline({
                 onEdit={onEditEvent}
                 onDelete={onDeleteEvent}
                 now={now}
+                swipeOpen={swipeOpenId === todayFocus.id}
+                onSwipeOpen={(id) => setSwipeOpenId(id)}
               />
             </section>
           )}
@@ -114,6 +118,8 @@ export function Timeline({
                   onEdit={onEditEvent}
                   onDelete={onDeleteEvent}
                   now={now}
+                  swipeOpen={swipeOpenId === ev.id}
+                  onSwipeOpen={(id) => setSwipeOpenId(id)}
                 />
               ))}
             </div>
@@ -139,6 +145,8 @@ export function Timeline({
                       onEdit={onEditEvent}
                       onDelete={onDeleteEvent}
                       now={now}
+                      swipeOpen={swipeOpenId === ev.id}
+                      onSwipeOpen={(id) => setSwipeOpenId(id)}
                     />
                   ))}
                 </div>
@@ -158,6 +166,8 @@ export function Timeline({
                   onEdit={onEditEvent}
                   onDelete={onDeleteEvent}
                   now={now}
+                  swipeOpen={swipeOpenId === ev.id}
+                  onSwipeOpen={(id) => setSwipeOpenId(id)}
                 />
               ))}
             </div>
