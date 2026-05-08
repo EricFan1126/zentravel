@@ -32,8 +32,8 @@ export function TimelineCard({ event, expanded, onToggle, onEdit, onDelete, now,
     if (touchStart.current === null) return
     const dx = e.changedTouches[0].clientX - touchStart.current
     touchStart.current = null
-    if (dx > THRESHOLD && !swipeOpen) { onSwipeOpen(event.id); return }
-    if (dx < -THRESHOLD && swipeOpen) { onSwipeOpen(null); return }
+    if (dx < -THRESHOLD && !swipeOpen) { onSwipeOpen(event.id); return }
+    if (dx > THRESHOLD && swipeOpen) { onSwipeOpen(null); return }
   }
 
   const handleCardClick = () => {
@@ -56,9 +56,9 @@ export function TimelineCard({ event, expanded, onToggle, onEdit, onDelete, now,
 
   return (
     <div className="relative overflow-hidden rounded-2xl">
-      {/* 底層：編輯 / 刪除按鈕 */}
+      {/* 底層：編輯 / 刪除按鈕（右側） */}
       <div
-        className="absolute inset-y-0 left-0 flex"
+        className="absolute inset-y-0 right-0 flex"
         style={{ width: ACTION_WIDTH }}
         aria-hidden="true"
       >
@@ -84,10 +84,10 @@ export function TimelineCard({ event, expanded, onToggle, onEdit, onDelete, now,
         )}
       </div>
 
-      {/* 上層：卡片本體，右滑時向右移動 */}
+      {/* 上層：卡片本體，左滑時向左移動 */}
       <div
         style={{
-          transform: swipeOpen ? `translateX(${ACTION_WIDTH}px)` : 'translateX(0)',
+          transform: swipeOpen ? `translateX(-${ACTION_WIDTH}px)` : 'translateX(0)',
           transition: 'transform 0.25s ease-out',
         }}
         onTouchStart={handleTouchStart}
