@@ -5,6 +5,7 @@ import { formatDateLabel, parseTime } from '@/lib/time'
 
 export function MemoryGallery({ pastEvents, onMemorySaved }) {
   const [editingId, setEditingId] = useState(null)
+  const [swipeOpenId, setSwipeOpenId] = useState(null)
 
   // 依日期分組（最新在前）
   const grouped = useMemo(() => {
@@ -44,6 +45,8 @@ export function MemoryGallery({ pastEvents, onMemorySaved }) {
                 key={ev.id}
                 event={ev}
                 onOpen={() => setEditingId(ev.id)}
+                swipeOpen={swipeOpenId === ev.id}
+                onSwipeOpen={setSwipeOpenId}
               />
             ))}
           </div>

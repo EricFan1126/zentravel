@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus, MapPin, CalendarDays, Trash2, UserPlus, LogIn, Pencil } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { SwipeableRow } from '@/components/ui/SwipeableRow'
 import { InviteModal } from './InviteModal'
 import { MemberAvatars } from './MemberAvatars'
 import { cn } from '@/lib/utils'
@@ -81,13 +82,13 @@ function TripEditForm({ trip, onSave, onCancel }) {
   )
 }
 
-export function TripList({ trips, onSelect, onAdd, onUpdate, onDelete, onJoin, uid, editMode, onToggleEditMode }) {
+export function TripList({ trips, onSelect, onAdd, onUpdate, onDelete, onJoin, uid }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', destination: '', startDate: '', endDate: '', coverEmoji: '✈️' })
   const [error, setError] = useState('')
-  const [deletingId, setDeletingId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [inviteTrip, setInviteTrip] = useState(null)
+  const [swipeOpenId, setSwipeOpenId] = useState(null)
 
   const [showJoin, setShowJoin] = useState(false)
   const [joinCode, setJoinCode] = useState('')
@@ -122,39 +123,47 @@ export function TripList({ trips, onSelect, onAdd, onUpdate, onDelete, onJoin, u
     }
   }
 
-  const handleExitEdit = () => {
-    setEditingId(null)
-    setDeletingId(null)
-    onToggleEditMode()
-  }
-
   return (
     <div className="px-0 animate-fade-in">
       <div className="space-y-4">
         {trips.map(trip => {
           const isOwner = !trip.sharedFrom
+          const actions = [
+            isOwner && {
+              label: '成員',
+              icon: <UserPlus className="h-4 w-4" />,
+              className: 'bg-sage-green/15 text-sage-green hover:bg-sage-green/25',
+              onClick: () => setInviteTrip(trip),
+            },
+            isOwner && {
+              label: '編輯',
+              icon: <Pencil className="h-4 w-4" />,
+              className: 'bg-morandi-blue/15 text-morandi-blue hover:bg-morandi-blue/25',
+              onClick: () => setEditingId(editingId === trip.id ? null : trip.id),
+            },
+            {
+              label: isOwner ? '刪除' : '退出',
+              icon: <Trash2 className="h-4 w-4" />,
+              className: 'bg-red-50 text-red-400 hover:bg-red-100',
+              onClick: () => {
+                const msg = isOwner ? `確定刪除「${trip.name}」及所有行程？` : `確定退出「${trip.name}」？`
+                if (window.confirm(msg)) onDelete(trip.id)
+              },
+            },
+          ].filter(Boolean)
+
           return (
-            <Card
+            <SwipeableRow
               key={trip.id}
-              className={cn(
-                'transition-all duration-200 overflow-hidden',
-                !editMode && 'cursor-pointer hover:shadow-zen-lg',
-                editMode && isOwner && 'ring-1 ring-morandi-blue/20',
-              )}
+              swipeOpen={swipeOpenId === trip.id}
+              onSwipeOpen={(open) => setSwipeOpenId(open ? trip.id : null)}
+              actions={actions}
             >
-              {deletingId === trip.id ? (
-                <div className="p-5 flex items-center justify-between">
-                  <span className="text-sm text-graphite-soft">確定刪除「{trip.name}」及所有行程？</span>
-                  <div className="flex gap-3 ml-3 shrink-0">
-                    <button onClick={() => setDeletingId(null)} className="text-xs text-graphite-soft hover:text-graphite transition-colors">取消</button>
-                    <button onClick={() => { onDelete(trip.id); setDeletingId(null) }} className="text-xs text-red-400 hover:text-red-500 transition-colors">確定刪除</button>
-                  </div>
-                </div>
-              ) : (
+              <Card className="transition-shadow duration-200 overflow-hidden cursor-pointer hover:shadow-zen-lg">
                 <div className="p-5">
                   <div
                     className="flex items-start gap-4"
-                    onClick={() => !editMode && onSelect(trip)}
+                    onClick={() => onSelect(trip)}
                   >
                     <span className="text-3xl leading-none mt-0.5">{trip.coverEmoji}</span>
                     <div className="flex-1 min-w-0">
@@ -171,40 +180,9 @@ export function TripList({ trips, onSelect, onAdd, onUpdate, onDelete, onJoin, u
                       </p>
                       <MemberAvatars trip={trip} />
                     </div>
-
-                    {/* 編輯模式下顯示操作按鈕 */}
-                    {editMode && isOwner && (
-                      <div className="flex items-center gap-3 shrink-0">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setInviteTrip(trip) }}
-                          className="p-1.5 text-graphite-soft/50 hover:text-morandi-blue transition-colors"
-                          title="邀請成員"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditingId(editingId === trip.id ? null : trip.id) }}
-                          className={cn(
-                            'p-1.5 transition-colors',
-                            editingId === trip.id ? 'text-morandi-blue' : 'text-graphite-soft/50 hover:text-morandi-blue',
-                          )}
-                          title="編輯旅程"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeletingId(trip.id) }}
-                          className="p-1.5 text-graphite-soft/50 hover:text-red-400 transition-colors"
-                          title="刪除旅程"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    )}
                   </div>
 
-                  {/* 行內編輯表單 */}
-                  {editMode && editingId === trip.id && (
+                  {editingId === trip.id && (
                     <TripEditForm
                       trip={trip}
                       onSave={(updated) => { onUpdate(updated); setEditingId(null) }}
@@ -212,115 +190,100 @@ export function TripList({ trips, onSelect, onAdd, onUpdate, onDelete, onJoin, u
                     />
                   )}
                 </div>
-              )}
-            </Card>
+              </Card>
+            </SwipeableRow>
           )
         })}
       </div>
 
-      {/* 新增旅程表單 */}
-      {!editMode && (
-        showForm ? (
-          <Card className="mt-4 p-5 animate-fade-in-up">
-            <h3 className="text-sm font-medium text-graphite mb-4">新增旅程</h3>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {EMOJIS.map(e => (
-                <button
-                  key={e}
-                  onClick={() => set('coverEmoji', e)}
-                  className={cn(
-                    'w-9 h-9 rounded-xl text-lg transition-colors',
-                    form.coverEmoji === e ? 'bg-graphite/10 ring-1 ring-graphite/20' : 'hover:bg-divider/40',
-                  )}
-                >{e}</button>
-              ))}
-            </div>
-            <div className="space-y-3">
-              <input
-                value={form.name}
-                onChange={e => set('name', e.target.value)}
-                placeholder="旅程名稱（如：東京初春）"
-                className="w-full bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite placeholder:text-graphite-soft/50 focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
-              />
-              <input
-                value={form.destination}
-                onChange={e => set('destination', e.target.value)}
-                placeholder="目的地（如：日本東京）"
-                className="w-full bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite placeholder:text-graphite-soft/50 focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
-              />
-              <div className="space-y-2">
-                <div>
-                  <label className="text-xs text-graphite-soft mb-1 block">開始日期</label>
-                  <input
-                    type="date"
-                    value={form.startDate}
-                    onChange={e => set('startDate', e.target.value)}
-                    className="w-full box-border appearance-none bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-graphite-soft mb-1 block">結束日期</label>
-                  <input
-                    type="date"
-                    value={form.endDate}
-                    onChange={e => set('endDate', e.target.value)}
-                    className="w-full box-border appearance-none bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
-                  />
-                </div>
+      {showForm ? (
+        <Card className="mt-4 p-5 animate-fade-in-up">
+          <h3 className="text-sm font-medium text-graphite mb-4">新增旅程</h3>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {EMOJIS.map(e => (
+              <button
+                key={e}
+                onClick={() => set('coverEmoji', e)}
+                className={cn(
+                  'w-9 h-9 rounded-xl text-lg transition-colors',
+                  form.coverEmoji === e ? 'bg-graphite/10 ring-1 ring-graphite/20' : 'hover:bg-divider/40',
+                )}
+              >{e}</button>
+            ))}
+          </div>
+          <div className="space-y-3">
+            <input
+              value={form.name}
+              onChange={e => set('name', e.target.value)}
+              placeholder="旅程名稱（如：東京初春）"
+              className="w-full bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite placeholder:text-graphite-soft/50 focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
+            />
+            <input
+              value={form.destination}
+              onChange={e => set('destination', e.target.value)}
+              placeholder="目的地（如：日本東京）"
+              className="w-full bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite placeholder:text-graphite-soft/50 focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
+            />
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-graphite-soft mb-1 block">開始日期</label>
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={e => set('startDate', e.target.value)}
+                  className="w-full box-border appearance-none bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-graphite-soft mb-1 block">結束日期</label>
+                <input
+                  type="date"
+                  value={form.endDate}
+                  onChange={e => set('endDate', e.target.value)}
+                  className="w-full box-border appearance-none bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
+                />
               </div>
             </div>
-            {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setError('') }}>取消</Button>
-              <Button size="sm" onClick={handleAdd}>建立旅程</Button>
-            </div>
-          </Card>
-        ) : showJoin ? (
-          <Card className="mt-4 p-5 animate-fade-in-up">
-            <h3 className="text-sm font-medium text-graphite mb-4">輸入邀請碼</h3>
-            <input
-              value={joinCode}
-              onChange={e => setJoinCode(e.target.value.toUpperCase())}
-              placeholder="例：A3B7K2"
-              maxLength={6}
-              className="w-full bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite tracking-widest placeholder:text-graphite-soft/50 focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
-            />
-            {joinError && <p className="mt-2 text-xs text-red-400">{joinError}</p>}
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setShowJoin(false); setJoinCode(''); setJoinError('') }}>取消</Button>
-              <Button size="sm" onClick={handleJoin} disabled={joinLoading}>
-                {joinLoading ? '加入中…' : '加入旅程'}
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          <div className="mt-4 flex gap-2">
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex-1 py-4 rounded-2xl border border-dashed border-divider text-sm text-graphite-soft hover:border-morandi-blue/40 hover:text-morandi-blue transition-colors flex items-center justify-center gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              新增旅程
-            </button>
-            <button
-              onClick={() => setShowJoin(true)}
-              className="flex-1 py-4 rounded-2xl border border-dashed border-divider text-sm text-graphite-soft hover:border-sage-green/50 hover:text-sage-green transition-colors flex items-center justify-center gap-2"
-            >
-              <LogIn className="h-4 w-4" />
-              加入旅程
-            </button>
           </div>
-        )
-      )}
-
-      {/* 編輯模式下的完成按鈕 */}
-      {editMode && (
-        <div className="mt-4 flex justify-center">
+          {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { setShowForm(false); setError('') }}>取消</Button>
+            <Button size="sm" onClick={handleAdd}>建立旅程</Button>
+          </div>
+        </Card>
+      ) : showJoin ? (
+        <Card className="mt-4 p-5 animate-fade-in-up">
+          <h3 className="text-sm font-medium text-graphite mb-4">輸入邀請碼</h3>
+          <input
+            value={joinCode}
+            onChange={e => setJoinCode(e.target.value.toUpperCase())}
+            placeholder="例：A3B7K2"
+            maxLength={6}
+            className="w-full bg-cloud-white border border-divider rounded-xl px-3 py-2 text-sm text-graphite tracking-widest placeholder:text-graphite-soft/50 focus:outline-none focus:ring-2 focus:ring-morandi-blue/30 focus:border-morandi-blue/40"
+          />
+          {joinError && <p className="mt-2 text-xs text-red-400">{joinError}</p>}
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="ghost" size="sm" onClick={() => { setShowJoin(false); setJoinCode(''); setJoinError('') }}>取消</Button>
+            <Button size="sm" onClick={handleJoin} disabled={joinLoading}>
+              {joinLoading ? '加入中…' : '加入旅程'}
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <div className="mt-4 flex gap-2">
           <button
-            onClick={handleExitEdit}
-            className="px-6 py-2.5 rounded-full bg-graphite/6 text-sm text-graphite-soft hover:bg-graphite/10 transition-colors"
+            onClick={() => setShowForm(true)}
+            className="flex-1 py-4 rounded-2xl border border-dashed border-divider text-sm text-graphite-soft hover:border-morandi-blue/40 hover:text-morandi-blue transition-colors flex items-center justify-center gap-2"
           >
-            完成編輯
+            <Plus className="h-4 w-4" />
+            新增旅程
+          </button>
+          <button
+            onClick={() => setShowJoin(true)}
+            className="flex-1 py-4 rounded-2xl border border-dashed border-divider text-sm text-graphite-soft hover:border-sage-green/50 hover:text-sage-green transition-colors flex items-center justify-center gap-2"
+          >
+            <LogIn className="h-4 w-4" />
+            加入旅程
           </button>
         </div>
       )}

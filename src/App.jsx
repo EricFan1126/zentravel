@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { Pencil, Check } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
 import { TabBar } from '@/components/layout/TabBar'
 import { TripList } from '@/components/trip/TripList'
@@ -36,7 +35,6 @@ export default function App() {
 
 function AppContent({ uid }) {
   const [tab, setTab] = useState('timeline')
-  const [tripEditMode, setTripEditMode] = useState(false)
   const now = useNow()
   const {
     trips,
@@ -139,27 +137,12 @@ function AppContent({ uid }) {
     return ''
   }
 
-  // 旅程列表頁才顯示右上角編輯按鈕
-  const showTripEditBtn = tab === 'timeline' && !selectedTrip
-  const tripListRightAction = showTripEditBtn ? (
-    <button
-      onClick={() => setTripEditMode(m => !m)}
-      className="flex items-center gap-1.5 text-sm text-graphite-soft hover:text-graphite transition-colors py-1"
-    >
-      {tripEditMode
-        ? <><Check className="h-4 w-4 text-morandi-blue" /><span className="text-morandi-blue">完成</span></>
-        : <><Pencil className="h-4 w-4" />編輯</>
-      }
-    </button>
-  ) : null
-
   return (
     <>
       <AppShell
         title={getTitle()}
         subtitle={getSubtitle()}
-        onBack={tab === 'timeline' && selectedTrip ? () => { setSelectedTripId(null); setTripEditMode(false) } : null}
-        rightAction={tripListRightAction}
+        onBack={tab === 'timeline' && selectedTrip ? () => setSelectedTripId(null) : null}
       >
         {tab === 'calendar' && (
           <CalendarView events={allEvents} onSelectDate={handleCalendarDateSelect} />
@@ -186,8 +169,6 @@ function AppContent({ uid }) {
               onDelete={deleteTrip}
               onJoin={joinTrip}
               uid={uid}
-              editMode={tripEditMode}
-              onToggleEditMode={() => setTripEditMode(false)}
             />
           )
         )}
@@ -203,8 +184,6 @@ function AppContent({ uid }) {
               onDelete={deleteTrip}
               onJoin={joinTrip}
               uid={uid}
-              editMode={false}
-              onToggleEditMode={() => {}}
             />
           )
         )}
@@ -212,7 +191,7 @@ function AppContent({ uid }) {
           <ProfilePage user={user} onLogout={logout} />
         )}
       </AppShell>
-      <TabBar active={tab} onChange={(t) => { setTab(t); setTripEditMode(false); if (t !== 'timeline') setSelectedTripId(null) }} />
+      <TabBar active={tab} onChange={(t) => { setTab(t); if (t !== 'timeline') setSelectedTripId(null) }} />
 
       {editorState && (
         <EventEditor
