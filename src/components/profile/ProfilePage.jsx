@@ -120,6 +120,13 @@ export function ProfilePage({ user, onLogout }) {
           </Button>
         </div>
       </Card>
+
+      {/* 版本號 */}
+      <p className="text-center text-xs text-graphite-soft/40 pb-2">
+        {import.meta.env.VITE_COMMIT_SHA
+          ? `build ${import.meta.env.VITE_COMMIT_SHA.slice(0, 7)}`
+          : 'dev'}
+      </p>
     </div>
   )
 }
